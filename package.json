@@ -29,6 +29,9 @@
     "react-dom": "^18.3.0",
     "tailwind-merge": "^2.3.0"
   },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "devDependencies": {
     "@types/jest": "^29.5.0",
     "@types/node": "^20.14.0",

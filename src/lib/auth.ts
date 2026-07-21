@@ -9,7 +9,6 @@ interface AuthUser {
   name: string;
   role: UserRole;
   department: string;
-  employeeId?: string;
 }
 
 export async function getAuthUser(): Promise<AuthUser | null> {
@@ -18,20 +17,31 @@ export async function getAuthUser(): Promise<AuthUser | null> {
     const sessionCookie = cookieStore.get("session")?.value;
 
     if (!sessionCookie) return null;
+
+    // Dev mode session
+    if (sessionCookie.startsWith("dev-session-")) {
+      const userId = sessionCookie.replace("dev-session-", "");
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, email: true, name: true, role: true, department: true },
+      });
+      if (!user) return null;
+      return {
+        uid: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role as UserRole,
+        department: user.department,
+      };
+    }
+
+    // Firebase session
     if (!adminAuth) return null;
 
     const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie, true);
-
     const user = await prisma.user.findUnique({
       where: { firebaseUid: decodedClaims.uid },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        department: true,
-        employeeId: true,
-      },
+      select: { id: true, email: true, name: true, role: true, department: true },
     });
 
     if (!user) return null;
@@ -42,7 +52,6 @@ export async function getAuthUser(): Promise<AuthUser | null> {
       name: user.name,
       role: user.role as UserRole,
       department: user.department,
-      employeeId: user.employeeId ?? undefined,
     };
   } catch {
     return null;

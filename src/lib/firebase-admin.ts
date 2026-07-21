@@ -19,11 +19,10 @@ try {
             }),
           })
         : getApps()[0];
-
     adminAuth = getAuth(adminApp);
   }
 } catch (e) {
-  console.warn("Firebase Admin not initialized:", (e as Error).message);
+  console.warn("Firebase Admin not initialized (dev mode):", (e as Error).message);
 }
 
 export { adminAuth };
