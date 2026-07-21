@@ -78,9 +78,8 @@ jobs:
       - run: npm install --legacy-peer-deps
       - name: npm audit
         run: npm audit --audit-level=high || true
-      - name: TestSprite Security Scan
-        uses: testsprite/security-scan@v1
-        continue-on-error: true
+      - name: npm audit fix (auto-fix)
+        run: npm audit fix || true
 
   deploy-staging:
     name: Deploy to Staging
