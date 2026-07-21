@@ -1,0 +1,104 @@
+{
+  "common": {
+    "appName": "SYRIX",
+    "appSubtitle": "Enterprise Management System",
+    "dashboard": "Dashboard",
+    "login": "Login",
+    "logout": "Logout",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "filter": "Filter",
+    "noData": "No data available",
+    "error": "Error",
+    "success": "Success",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "actions": "Actions",
+    "status": "Status",
+    "active": "Active",
+    "inactive": "Inactive",
+    "all": "All",
+    "version": "Version",
+    "updated": "Updated",
+    "selectLanguage": "Select Language",
+    "arabic": "العربية",
+    "english": "English",
+    "user": "User",
+    "password": "Password",
+    "email": "Email",
+    "welcome": "Welcome",
+    "systemUpdated": "System updated",
+    "buildTime": "Build time",
+    "checkUpdates": "Check for Updates",
+    "updateSystem": "Update System",
+    "updateProgress": "Updating {progress}%..."
+  },
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "hr": "Human Resources",
+    "operations": "Operations",
+    "accounts": "Accounting",
+    "marketing": "Marketing",
+    "sales": "Sales"
+  },
+  "login": {
+    "title": "Login",
+    "emailPlaceholder": "admin@syrix.com",
+    "passwordPlaceholder": "••••••••",
+    "submit": "Sign In",
+    "devModeTitle": "Local Development Mode",
+    "devModeDesc": "Firebase is not configured. Use the dev accounts below.",
+    "devAccounts": "Dev accounts:",
+    "superAdmin": "Super Admin",
+    "errorRequired": "Email and password are required",
+    "errorInvalid": "Invalid email or password",
+    "errorInactive": "Account is not active",
+    "errorGeneric": "Login failed"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "employees": "Employee Management",
+    "assets": "Asset Management",
+    "accounting": "Accounting System",
+    "campaigns": "Campaigns & Leads",
+    "salesPipeline": "Sales Pipeline"
+  },
+  "hr": {
+    "title": "Human Resources",
+    "employees": "Employees",
+    "attendance": "Attendance",
+    "leaves": "Leaves",
+    "salaries": "Salaries"
+  },
+  "ops": {
+    "title": "Operations",
+    "units": "Units",
+    "contracts": "Contracts",
+    "bookings": "Bookings"
+  },
+  "accounts": {
+    "title": "Accounting",
+    "journal": "Journal Entries",
+    "trialBalance": "Trial Balance",
+    "incomeStatement": "Income Statement",
+    "balanceSheet": "Balance Sheet",
+    "cashFlow": "Cash Flow",
+    "ratios": "Financial Ratios"
+  },
+  "marketing": {
+    "title": "Marketing",
+    "campaigns": "Campaigns",
+    "leads": "Leads"
+  },
+  "sales": {
+    "title": "Sales",
+    "deals": "Deals"
+  }
+}

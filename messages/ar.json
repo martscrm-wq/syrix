@@ -1,0 +1,104 @@
+{
+  "common": {
+    "appName": "SYRIX",
+    "appSubtitle": "نظام الإدارة المتكامل",
+    "dashboard": "لوحة التحكم",
+    "login": "تسجيل الدخول",
+    "logout": "تسجيل الخروج",
+    "loading": "جاري...",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "create": "إنشاء",
+    "search": "بحث",
+    "filter": "تصفية",
+    "noData": "لا توجد بيانات",
+    "error": "خطأ",
+    "success": "تم بنجاح",
+    "confirm": "تأكيد",
+    "back": "رجوع",
+    "next": "التالي",
+    "previous": "السابق",
+    "actions": "إجراءات",
+    "status": "الحالة",
+    "active": "نشط",
+    "inactive": "غير نشط",
+    "all": "الكل",
+    "version": "الإصدار",
+    "updated": "محدث",
+    "selectLanguage": "اختر اللغة",
+    "arabic": "العربية",
+    "english": "English",
+    "user": "المستخدم",
+    "password": "كلمة المرور",
+    "email": "البريد الإلكتروني",
+    "welcome": "مرحبًا",
+    "systemUpdated": "النظام محدث",
+    "buildTime": "وقت البناء",
+    "checkUpdates": "فحص التحديثات",
+    "updateSystem": "تحديث النظام",
+    "updateProgress": "جاري التحديث {progress}%..."
+  },
+  "sidebar": {
+    "dashboard": "لوحة التحكم",
+    "hr": "الموارد البشرية",
+    "operations": "العمليات",
+    "accounts": "الحسابات",
+    "marketing": "التسويق",
+    "sales": "المبيعات"
+  },
+  "login": {
+    "title": "تسجيل الدخول",
+    "emailPlaceholder": "admin@syrix.com",
+    "passwordPlaceholder": "••••••••",
+    "submit": "تسجيل الدخول",
+    "devModeTitle": "وضع التطوير المحلي",
+    "devModeDesc": "Firebase غير مُعد. استخدم حسابات التطوير أدناه.",
+    "devAccounts": "حسابات التطوير:",
+    "superAdmin": "Super Admin",
+    "errorRequired": "البريد الإلكتروني وكلمة المرور مطلوبان",
+    "errorInvalid": "البريد الإلكتروني أو كلمة المرور غير صحيحة",
+    "errorInactive": "الحساب غير نشط",
+    "errorGeneric": "فشل تسجيل الدخول"
+  },
+  "dashboard": {
+    "title": "لوحة التحكم",
+    "employees": "إدارة الموظفين",
+    "assets": "إدارة الأصول",
+    "accounting": "النظام المحاسبي",
+    "campaigns": "الحملات وال Leads",
+    "salesPipeline": "خط سير العميل"
+  },
+  "hr": {
+    "title": "الموارد البشرية",
+    "employees": "الموظفين",
+    "attendance": "الحضور والانصراف",
+    "leaves": "الإجازات",
+    "salaries": "الرواتب"
+  },
+  "ops": {
+    "title": "العمليات",
+    "units": "الوحدات",
+    "contracts": "العقود",
+    "bookings": "الحجوزات"
+  },
+  "accounts": {
+    "title": "الحسابات",
+    "journal": "قيود اليومية",
+    "trialBalance": "ميزان المراجعة",
+    "incomeStatement": "قائمة الدخل",
+    "balanceSheet": "الميزانية العمومية",
+    "cashFlow": "التدفق النقدي",
+    "ratios": "النسب المالية"
+  },
+  "marketing": {
+    "title": "التسويق",
+    "campaigns": "الحملات",
+    "leads": "العملاء المحتملين"
+  },
+  "sales": {
+    "title": "المبيعات",
+    "deals": "الصفقات"
+  }
+}

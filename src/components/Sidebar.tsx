@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import {
@@ -18,20 +19,23 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
-
-const navItems = [
-  { href: "/dashboard", label: "لوحة التحكم", icon: LayoutDashboard },
-  { href: "/dashboard/hr", label: "الموارد البشرية", icon: Users },
-  { href: "/dashboard/operations", label: "العمليات", icon: Building2 },
-  { href: "/dashboard/accounts", label: "الحسابات", icon: Calculator },
-  { href: "/dashboard/marketing", label: "التسويق", icon: Megaphone },
-  { href: "/dashboard/sales", label: "المبيعات", icon: ShoppingCart },
-];
+import LanguageSwitcher from "./LanguageSwitcher";
 
 export default function Sidebar() {
+  const t = useTranslations("sidebar");
+  const tc = useTranslations("common");
   const pathname = usePathname();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+
+  const navItems = [
+    { href: "/dashboard", label: t("dashboard"), icon: LayoutDashboard },
+    { href: "/dashboard/hr", label: t("hr"), icon: Users },
+    { href: "/dashboard/operations", label: t("operations"), icon: Building2 },
+    { href: "/dashboard/accounts", label: t("accounts"), icon: Calculator },
+    { href: "/dashboard/marketing", label: t("marketing"), icon: Megaphone },
+    { href: "/dashboard/sales", label: t("sales"), icon: ShoppingCart },
+  ];
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -41,7 +45,6 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Mobile toggle */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="fixed top-4 right-4 z-50 md:hidden bg-white border border-slate-200 rounded-lg p-2 shadow-sm"
@@ -50,7 +53,6 @@ export default function Sidebar() {
         {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
       </button>
 
-      {/* Overlay */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black/20 z-40 md:hidden"
@@ -58,7 +60,6 @@ export default function Sidebar() {
         />
       )}
 
-      {/* Sidebar */}
       <aside
         className={cn(
           "fixed top-0 right-0 z-40 h-full w-64 bg-white border-l border-slate-200 transform transition-transform duration-200 ease-in-out md:relative md:translate-x-0",
@@ -66,7 +67,6 @@ export default function Sidebar() {
         )}
       >
         <div className="flex flex-col h-full">
-          {/* Logo */}
           <div className="p-4 border-b border-slate-200">
             <Link href="/dashboard" className="flex items-center gap-3">
               <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
@@ -74,12 +74,11 @@ export default function Sidebar() {
               </div>
               <div>
                 <h2 className="font-bold text-slate-900">SYRIX</h2>
-                <p className="text-xs text-slate-500">نظام الإدارة المتكامل</p>
+                <p className="text-xs text-slate-500">{tc("appSubtitle")}</p>
               </div>
             </Link>
           </div>
 
-          {/* Nav */}
           <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
             {navItems.map((item) => {
               const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
@@ -103,14 +102,14 @@ export default function Sidebar() {
             })}
           </nav>
 
-          {/* Logout */}
-          <div className="p-3 border-t border-slate-200">
+          <div className="p-3 border-t border-slate-200 space-y-1">
+            <LanguageSwitcher />
             <button
               onClick={handleLogout}
               className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
             >
               <LogOut className="w-5 h-5" />
-              <span>تسجيل الخروج</span>
+              <span>{tc("logout")}</span>
             </button>
           </div>
         </div>
