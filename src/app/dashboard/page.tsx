@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Users, Building2, Calculator, Megaphone, ShoppingCart, CheckCircle, RefreshCw } from "lucide-react";
 import { BUILD_VERSION, BUILD_TIME } from "@/lib/build-info";
+import UpdateWidget from "./UpdateWidget";
 
 const modules = [
   { name: "الموارد البشرية", href: "/dashboard/hr", icon: Users, color: "bg-emerald-500", count: "إدارة الموظفين" },
@@ -56,7 +57,7 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-3 text-sm">
+      <div className="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-3 text-sm mb-4">
         <CheckCircle className="w-5 h-5 text-emerald-500" />
         <span className="text-slate-600">النظام محدث —</span>
         <span className="font-mono text-slate-500 text-xs" dir="ltr">{BUILD_VERSION}</span>
@@ -67,6 +68,8 @@ export default function DashboardPage() {
           <span>100%</span>
         </div>
       </div>
+
+      <UpdateWidget />
     </div>
   );
 }
