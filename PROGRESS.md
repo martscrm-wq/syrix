@@ -8,9 +8,9 @@
 
 | الحالة | العدد |
 |--------|-------|
-| ✅ مكتمل | 13 |
+| ✅ مكتمل | 15 |
 | 🔄 قيد التنفيذ | 0 |
-| ⏳ معلق | 5 |
+| ⏳ معلق | 3 |
 | ❌ متعثر | 0 |
 
 ---
@@ -95,14 +95,31 @@ _لا توجد مهام قيد التنفيذ حالياً._
 - [x] **T6.1** Pipeline بمراحل ثابتة (lead → negotiation → won → lost) ✅
 - [x] **T6.2** عند تحويل صفقة لـ "won" ← قيد إيراد تلقائي ✅
 
-### Phase 7 — الأداء والاختبار النهائي [2 tasks]
-- [ ] **T7.1** سكريبت k6 لمحاكاة 150 مستخدم متزامن
-- [ ] **T7.2** اختبار RBAC شامل: كل دور × كل endpoint
+### Phase 7 — الأداء والاختبار النهائي [2 tasks] ✅
+- [x] **T7.1** سكريبت k6 لمحاكاة 150 مستخدم متزامن ✅
+  - `loadtests/k6-script.js` — يحاكي 150 مستخدم على أهم 5 endpoints
+  - 5 مراحل (Ramp up → Peak → Ramp down)
+  - Threshold: 95% من الطلبات < 500ms
+- [x] **T7.2** اختبار RBAC شامل ✅
+  - `tests/rbac.test.ts` — 12 اختبار تشمل:
+    - مصفوفة صلاحيات 5 أدوار × 5 موديولات
+    - عزل بيانات الموظف (Employee)
+    - صلاحيات الكتابة/الحذف لكل دور
+    - صحة القيود المحاسبية (Double-Entry + American Rule)
+    - حدود Pagination (max 50)
+    - رصيد الإجازات
+    - Soft Delete
 
 ### Phase 8 — النشر [3 tasks]
-- [ ] **T8.1** ربط الدومين عبر Cloudflare أمام Vercel
-- [ ] **T8.2** نقل Secrets لـ Vercel Environment Variables
-- [ ] **T8.3** تفعيل UptimeRobot على الدومين النهائي
+- [x] **T8.1-T8.3** توثيق النشر الكامل ✅
+  - `DEPLOY.md` — دليل نشر شامل خطوة بخطوة:
+    - Vercel + Firebase + Neon + Upstash
+    - Environment Variables (17 متغير)
+    - Cloudflare DNS + UptimeRobot
+    - CI/CD جاهز
+- [ ] **T8.1** ربط الدومين عبر Cloudflare (تحتاج دومين فعلي)
+- [ ] **T8.2** نقل Secrets لـ Vercel (تحتاج حساب Vercel فعلي)
+- [ ] **T8.3** تفعيل UptimeRobot (تحتاج دومين منشور)
 
 ---
 
