@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { auth } from "@/lib/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { Building2, Lock, Mail, AlertCircle, WifiOff } from "lucide-react";
+import { Building2, Lock, Mail, AlertCircle, WifiOff, User } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -14,27 +14,27 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [devMode, setDevMode] = useState(false);
 
-  const handleDevLogin = async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const res = await fetch("/api/auth/dev-login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email || "admin@syrix.com" }),
-      });
-      if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
-      router.push("/dashboard");
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "فشل تسجيل الدخول التجريبي");
-    } finally { setLoading(false); }
-  };
-
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLocalLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
+    try {
+      const res = await fetch("/api/auth/local-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "فشل تسجيل الدخول");
+      router.push("/dashboard");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "حدث خطأ");
+    } finally { setLoading(false); }
+  };
 
+  const handleFirebaseLogin = async () => {
+    setError("");
+    setLoading(true);
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const idToken = await userCredential.user.getIdToken();
@@ -46,11 +46,9 @@ export default function LoginPage() {
       if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
       router.push("/dashboard");
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "حدث خطأ غير متوقع";
-      if (message.includes("auth/invalid-credential")) setError("البريد الإلكتروني أو كلمة المرور غير صحيحة");
-      else if (message.includes("auth/too-many-requests")) setError("تم حظر الحساب مؤقتًا. حاول لاحقًا");
-      else if (message.includes("auth/") || message.includes("Firebase")) setDevMode(true);
-      else setError(message);
+      const msg = err instanceof Error ? err.message : "";
+      if (msg.includes("auth/")) setDevMode(true);
+      else setError(msg || "فشل تسجيل الدخول");
     } finally { setLoading(false); }
   };
 
@@ -69,20 +67,14 @@ export default function LoginPage() {
           <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-4">
             <div className="flex items-center gap-2 text-amber-700 mb-2">
               <WifiOff className="w-5 h-5" />
-              <span className="font-medium">وضع التطوير (بدون Firebase)</span>
+              <span className="font-medium">وضع التطوير المحلي</span>
             </div>
-            <p className="text-sm text-amber-600 mb-3">
-              Firebase غير مُعدّ. استخدم وضع التطوير للتجربة المحلية.
-            </p>
-            <button onClick={handleDevLogin} disabled={loading}
-              className="w-full py-3 bg-amber-600 text-white font-medium rounded-lg hover:bg-amber-700 disabled:opacity-50 min-h-[44px] transition-colors">
-              {loading ? "جاري..." : "دخول للتجربة (dev mode)"}
-            </button>
+            <p className="text-sm text-amber-600">Firebase غير مُعد. استخدم حسابات التطوير أدناه.</p>
           </div>
         )}
 
-        <form onSubmit={handleLogin} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4">
-          {error && !devMode && (
+        <form onSubmit={handleLocalLogin} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4">
+          {error && (
             <div className="flex items-center gap-2 bg-red-50 text-red-700 p-3 rounded-lg text-sm">
               <AlertCircle className="w-5 h-5 flex-shrink-0" />
               <span>{error}</span>
@@ -110,9 +102,14 @@ export default function LoginPage() {
           </div>
 
           <button type="submit" disabled={loading}
-            className="w-full py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px]">
-            {loading ? "جاري تسجيل الدخول..." : "تسجيل الدخول"}
+            className="w-full py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors min-h-[44px]">
+            {loading ? "جاري..." : "تسجيل الدخول"}
           </button>
+
+          <div className="text-center text-xs text-slate-400 space-y-1 pt-2 border-t border-slate-100">
+            <div className="flex items-center justify-center gap-1"><User className="w-3 h-3" /> <span>حسابات التطوير:</span></div>
+            <p><span dir="ltr" className="font-mono">admin@syrix.com</span> — <span dir="ltr" className="font-mono">سش12345</span> <span className="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] mr-1">Super Admin</span></p>
+          </div>
         </form>
 
         <p className="text-center text-xs text-slate-400 mt-6">SYRIX v0.1 — نظام الإدارة المتكامل</p>

@@ -7,7 +7,7 @@ export function middleware(request: NextRequest) {
   // Protect API routes
   if (pathname.startsWith("/api/")) {
     // Public API endpoints
-    if (pathname === "/api/auth/login" || pathname === "/api/auth/dev-login") {
+    if (pathname === "/api/auth/login" || pathname === "/api/auth/dev-login" || pathname === "/api/auth/local-login") {
       return NextResponse.next();
     }
 

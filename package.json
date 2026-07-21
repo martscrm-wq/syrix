@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node -e \"const d=new Date(); require('fs').writeFileSync('src/lib/build-info.ts','// This file is regenerated at build time.\\nexport const BUILD_TIME = \\\"'+d.toISOString().replace('T',' ').slice(0,19)+'+03:00\\\";\\nexport const BUILD_VERSION = \\\"v0.1-dev\\\";\\n'); console.log('✓ Build info updated: '+d.toISOString());\" && next build",
     "start": "next start",
     "lint": "next lint",
     "test": "jest --passWithNoTests",

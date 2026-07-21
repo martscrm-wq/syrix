@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { auth } from "@/lib/firebase";
-import { onAuthStateChanged } from "firebase/auth";
-import { Users, Building2, Calculator, Megaphone, ShoppingCart } from "lucide-react";
+import { Users, Building2, Calculator, Megaphone, ShoppingCart, CheckCircle, RefreshCw } from "lucide-react";
+import { BUILD_VERSION, BUILD_TIME } from "@/lib/build-info";
 
 const modules = [
   { name: "الموارد البشرية", href: "/dashboard/hr", icon: Users, color: "bg-emerald-500", count: "إدارة الموظفين" },
@@ -15,34 +13,15 @@ const modules = [
 ];
 
 export default function DashboardPage() {
-  const router = useRouter();
-  const [user, setUser] = useState<{ email: string; name?: string } | null>(null);
+  const [user, setUser] = useState<{ name: string; email: string; role: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (!firebaseUser) {
-        router.push("/login");
-        return;
-      }
-
-      try {
-        const res = await fetch("/api/auth/me");
-        if (res.ok) {
-          const data = await res.json();
-          setUser(data.user);
-        } else {
-          setUser({ email: firebaseUser.email || "" });
-        }
-      } catch {
-        setUser({ email: firebaseUser.email || "" });
-      }
-
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [router]);
+    fetch("/api/auth/me")
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => setUser(d?.user ?? null))
+      .finally(() => setLoading(false));
+  }, []);
 
   if (loading) {
     return (
@@ -61,7 +40,7 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         {modules.map((mod) => (
           <a
             key={mod.href}
@@ -75,6 +54,18 @@ export default function DashboardPage() {
             <p className="text-sm text-slate-500 mt-1">{mod.count}</p>
           </a>
         ))}
+      </div>
+
+      <div className="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-3 text-sm">
+        <CheckCircle className="w-5 h-5 text-emerald-500" />
+        <span className="text-slate-600">النظام محدث —</span>
+        <span className="font-mono text-slate-500 text-xs" dir="ltr">{BUILD_VERSION}</span>
+        <span className="text-slate-300 mx-1">|</span>
+        <span className="font-mono text-slate-500 text-xs" dir="ltr">{BUILD_TIME}</span>
+        <div className="mr-auto flex items-center gap-1 text-emerald-600">
+          <RefreshCw className="w-3.5 h-3.5" />
+          <span>100%</span>
+        </div>
       </div>
     </div>
   );

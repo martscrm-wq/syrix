@@ -28,6 +28,7 @@ model User {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
+  devPassword String? // Dev mode only — plain text for local testing
 
   journalEntries JournalEntry[]
 
