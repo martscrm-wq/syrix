@@ -1,0 +1,295 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== USERS & ROLES ====================
+
+model Department {
+  id   String @id // hr | ops | acc | mkt | sales
+  name String
+
+  @@map("departments")
+}
+
+model User {
+  id          String    @id @default(cuid())
+  firebaseUid String    @unique
+  email       String    @unique
+  name        String
+  role        String    @default("employee") // super_admin | department_manager | employee | accountant
+  department  String    // hr | ops | accounts | marketing | sales
+  employeeId  String?   @unique
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  journalEntries JournalEntry[]
+
+  employee    Employee?
+  attendance  Attendance[]
+  leaves      Leave[]
+  salaries    Salary[]
+}
+
+// ==================== HR MODULE (hr_*) ====================
+
+model Employee {
+  id            String    @id @default(cuid())
+  userId        String    @unique
+  employeeCode  String    @unique
+  fullName      String
+  fullNameAr    String
+  position      String
+  department    String
+  phone         String?
+  hireDate      DateTime
+  basicSalary   Float     @default(0)
+  allowances    Float     @default(0)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("hr_employees")
+}
+
+model Attendance {
+  id        String   @id @default(cuid())
+  userId    String
+  date      DateTime @default(now())
+  checkIn   DateTime?
+  checkOut  DateTime?
+  status    String   @default("present") // present | late | absent | half_day
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("hr_attendance")
+}
+
+model Leave {
+  id          String   @id @default(cuid())
+  userId      String
+  leaveType   String   // annual | sick | emergency | unpaid
+  startDate   DateTime
+  endDate     DateTime
+  daysCount   Int
+  reason      String?
+  status      String   @default("pending") // pending | approved | rejected
+  approvedBy  String?
+  approvedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("hr_leaves")
+}
+
+model Salary {
+  id              String   @id @default(cuid())
+  userId          String
+  month           Int
+  year            Int
+  basicSalary     Float    @default(0)
+  allowances      Float    @default(0)
+  deductions      Float    @default(0)
+  netSalary       Float    @default(0)
+  bonus           Float    @default(0)
+  overtime        Float    @default(0)
+  status          String   @default("draft") // draft | approved | paid
+  paidAt          DateTime?
+  journalEntryId  String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
+
+  user         User          @relation(fields: [userId], references: [id])
+  journalEntry JournalEntry? @relation(fields: [journalEntryId], references: [id])
+
+  @@map("hr_salaries")
+}
+
+// ==================== OPERATIONS MODULE (ops_*) ====================
+
+model Unit {
+  id          String   @id @default(cuid())
+  name        String
+  nameAr      String
+  type        String   // residential | commercial | office | land
+  status      String   @default("available") // available | rented | under_maintenance | sold
+  area        Float?
+  price       Float    @default(0)
+  address     String?
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  bookings    Booking[]
+  contracts   Contract[]
+
+  @@map("ops_units")
+}
+
+model Booking {
+  id           String   @id @default(cuid())
+  unitId       String
+  customerName String
+  customerPhone String?
+  startDate    DateTime
+  endDate      DateTime
+  status       String   @default("pending") // pending | confirmed | cancelled | completed
+  totalAmount  Float    @default(0)
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  deletedAt    DateTime?
+
+  unit Unit @relation(fields: [unitId], references: [id])
+
+  @@map("ops_bookings")
+}
+
+model Contract {
+  id            String   @id @default(cuid())
+  unitId        String
+  clientName    String
+  clientPhone   String?
+  startDate     DateTime
+  endDate       DateTime
+  contractType  String   // lease | sale | service
+  monthlyAmount Float    @default(0)
+  totalAmount   Float    @default(0)
+  status        String   @default("active") // active | expired | terminated
+  notes         String?
+  notifiedBefore30d Boolean @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
+
+  unit Unit @relation(fields: [unitId], references: [id])
+
+  @@map("ops_contracts")
+}
+
+// ==================== MARKETING MODULE (mkt_*) ====================
+
+model Campaign {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  budget      Float    @default(0)
+  spent       Float    @default(0)
+  channel     String   // social_media | google_ads | email | tv | radio | other
+  startDate   DateTime
+  endDate     DateTime?
+  status      String   @default("active") // active | paused | completed
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  leads Lead[]
+
+  @@map("mkt_campaigns")
+}
+
+model Lead {
+  id            String   @id @default(cuid())
+  name          String
+  phone         String?
+  email         String?
+  source        String   // website | social_media | referral | campaign | walk_in | other
+  campaignId    String?
+  status        String   @default("new") // new | contacted | qualified | converted | lost
+  notes         String?
+  assignedTo    String?
+  convertedToDealId String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
+
+  campaign Campaign? @relation(fields: [campaignId], references: [id])
+
+  @@map("mkt_leads")
+}
+
+// ==================== SALES MODULE (sales_*) ====================
+
+model Deal {
+  id          String   @id @default(cuid())
+  leadId      String?
+  customerName String
+  customerPhone String?
+  customerEmail String?
+  amount      Float    @default(0)
+  stage       String   @default("lead") // lead | negotiation | won | lost
+  source      String?
+  notes       String?
+  reminders   String?
+  assignedTo  String
+  wonAt       DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  @@map("sales_deals")
+}
+
+// ==================== ACCOUNTING MODULE (acc_*) ====================
+
+model Account {
+  id        String  @id @default(cuid())
+  code      String  @unique
+  name      String
+  nameAr    String
+  type      String  // asset | liability | equity | revenue | expense
+  category  String  // current_asset | fixed_asset | intangible_asset | current_liability | long_term_liability | equity | revenue | expense | contra_asset
+  isActive  Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  journalLines JournalLine[]
+
+  @@map("acc_chart_of_accounts")
+}
+
+model JournalEntry {
+  id          String   @id @default(cuid())
+  entryDate   DateTime
+  description String
+  reference   String?
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  createdBy User          @relation(fields: [createdById], references: [id])
+  lines     JournalLine[]
+  salaries  Salary[]
+
+  @@map("acc_journal_entries")
+}
+
+model JournalLine {
+  id        String  @id @default(cuid())
+  entryId   String
+  accountId String
+  debit     Float   @default(0)
+  credit    Float   @default(0)
+
+  entry   JournalEntry @relation(fields: [entryId], references: [id])
+  account Account      @relation(fields: [accountId], references: [id])
+
+  @@map("acc_journal_lines")
+}

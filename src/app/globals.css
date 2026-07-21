@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  --font-sans: 'Noto Sans Arabic', system-ui, -apple-system, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-family: var(--font-sans);
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  color: #1e293b;
+  direction: rtl;
+}
+
+/* Mobile-first base */
+@media (min-width: 768px) {
+  body {
+    direction: rtl;
+  }
+}
+
+/* RTL overrides for input fields */
+input, textarea, select {
+  direction: rtl;
+  text-align: right;
+}
+
+/* Table responsive: horizontal scroll on mobile */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Card list for mobile tables (< 5 columns) */
+@media (max-width: 767px) {
+  .table-responsive table {
+    display: none;
+  }
+
+  .table-card-view {
+    display: block;
+  }
+}
+
+@media (min-width: 768px) {
+  .table-card-view {
+    display: none;
+  }
+}
+
+/* Touch target size */
+button, a, input[type="checkbox"], input[type="radio"] {
+  min-height: 44px;
+  min-width: 44px;
+}
