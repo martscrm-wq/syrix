@@ -16,7 +16,7 @@ variables:
 lint:
   stage: lint
   script:
-    - npm ci
+    - npm install --legacy-peer-deps
     - npx next lint --no-cache
     - npx tsc --noEmit
   artifacts:
@@ -26,7 +26,7 @@ lint:
 test:
   stage: test
   script:
-    - npm ci
+    - npm install --legacy-peer-deps
     - npx prisma generate
     - npm test -- --coverage
   artifacts:
@@ -38,7 +38,7 @@ test:
 build:
   stage: build
   script:
-    - npm ci
+    - npm install --legacy-peer-deps
     - npx prisma generate
     - npm run build
   artifacts:
@@ -48,6 +48,7 @@ build:
 security:
   stage: security
   script:
+    - npm install --legacy-peer-deps
     - npm audit --audit-level=high || true
     - npx testsprite security-scan || true
   allow_failure: true
