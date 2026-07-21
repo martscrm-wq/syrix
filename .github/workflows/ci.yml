@@ -24,7 +24,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
-      - run: npm ci
+      - run: npm install --legacy-peer-deps
       - run: npx next lint --no-cache
       - run: npx tsc --noEmit
 
@@ -38,7 +38,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
-      - run: npm ci
+      - run: npm install --legacy-peer-deps
       - run: npx prisma generate
       - run: npm test -- --coverage
       - uses: actions/upload-artifact@v4
@@ -57,7 +57,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
-      - run: npm ci
+      - run: npm install --legacy-peer-deps
       - run: npx prisma generate
       - run: npm run build
       - uses: actions/upload-artifact@v4
@@ -75,7 +75,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
-      - run: npm ci
+      - run: npm install --legacy-peer-deps
       - name: npm audit
         run: npm audit --audit-level=high || true
       - name: TestSprite Security Scan
