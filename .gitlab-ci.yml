@@ -1,0 +1,69 @@
+image: node:20
+
+cache:
+  paths: [node_modules/, .next/]
+
+stages:
+  - lint
+  - test
+  - build
+  - security
+  - deploy
+
+variables:
+  DATABASE_URL: $DATABASE_URL
+
+lint:
+  stage: lint
+  script:
+    - npm ci
+    - npx next lint --no-cache
+    - npx tsc --noEmit
+  artifacts:
+    paths: [node_modules/]
+    expire_in: 1 hour
+
+test:
+  stage: test
+  script:
+    - npm ci
+    - npx prisma generate
+    - npm test -- --coverage
+  artifacts:
+    reports:
+      junit: junit.xml
+    paths: [coverage/]
+    expire_in: 30 days
+
+build:
+  stage: build
+  script:
+    - npm ci
+    - npx prisma generate
+    - npm run build
+  artifacts:
+    paths: [.next/]
+    expire_in: 1 day
+
+security:
+  stage: security
+  script:
+    - npm audit --audit-level=high || true
+    - npx testsprite security-scan || true
+  allow_failure: true
+
+deploy-staging:
+  stage: deploy
+  script:
+    - echo "Deploying to staging..."
+  only:
+    - develop
+
+deploy-production:
+  stage: deploy
+  script:
+    - echo "Deploying to production..."
+  only:
+    - main
+  environment: production
+  when: manual
