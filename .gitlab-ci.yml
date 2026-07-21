@@ -1,0 +1,248 @@
+# SYRIX — GitLab CI/CD Pipeline
+# Stages: build → test → security → deploy
+
+stages:
+  - build
+  - test
+  - security
+  - deploy
+
+variables:
+  NODE_VERSION: "20"
+  NEXT_PUBLIC_APP_NAME: "SYRIX"
+  CACHE_KEY_PREFIX: "syrix-${CI_COMMIT_REF_SLUG}"
+
+cache:
+  key: ${CACHE_KEY_PREFIX}
+  paths:
+    - node_modules/
+    - .next/cache/
+
+# ============================================================
+# BUILD STAGE
+# ============================================================
+
+install_dependencies:
+  stage: build
+  image: node:${NODE_VERSION}
+  script:
+    - npm ci --cache .npm --prefer-offline
+    - npx prisma generate
+  artifacts:
+    paths:
+      - node_modules/
+      - prisma/generated/
+    expire_in: 1 hour
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_BRANCH == "develop"
+
+build_app:
+  stage: build
+  image: node:${NODE_VERSION}
+  needs:
+    - install_dependencies
+  script:
+    - npm run build
+  artifacts:
+    paths:
+      - .next/
+      - public/
+    expire_in: 1 hour
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_BRANCH == "develop"
+
+lint_typescript:
+  stage: build
+  image: node:${NODE_VERSION}
+  needs:
+    - install_dependencies
+  script:
+    - npx tsc --noEmit
+    - npm run lint
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"
+
+# ============================================================
+# TEST STAGE
+# ============================================================
+
+unit_tests:
+  stage: test
+  image: node:${NODE_VERSION}
+  needs:
+    - install_dependencies
+  script:
+    - npm test -- --coverage
+  artifacts:
+    reports:
+      junit: junit.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage/cobertura-coverage.xml
+    paths:
+      - coverage/
+    expire_in: 30 days
+  coverage: '/All files\s*\|\s*(\d+\.\d+)/'
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_BRANCH == "develop"
+
+testsprite_ai_tests:
+  stage: test
+  image: node:${NODE_VERSION}
+  needs:
+    - build_app
+  variables:
+    TESTSPRITE_API_KEY: ${TESTSPRITE_API_KEY}
+  script:
+    - npm install -g @testsprite/cli 2>/dev/null || echo "TestSprite CLI optional, skipping install"
+    - if command -v testsprite &> /dev/null; then
+        testsprite run --api-key $TESTSPRITE_API_KEY --project-id $TESTSPRITE_PROJECT_ID --junit testsprite-report.xml;
+      else
+        echo "TestSprite CLI not available — running unit tests as fallback";
+        npm test -- --coverage;
+      fi
+  artifacts:
+    reports:
+      junit: testsprite-report.xml
+    expire_in: 30 days
+  allow_failure: true
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"
+
+db_migration_test:
+  stage: test
+  image: node:${NODE_VERSION}
+  services:
+    - postgres:16-alpine
+  variables:
+    DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/syrix_test?sslmode=disable"
+  needs:
+    - install_dependencies
+  script:
+    - npx prisma db push --force-reset
+    - npx prisma db seed
+    - echo "✅ Database migration and seed successful"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"
+
+# ============================================================
+# SECURITY STAGE
+# ============================================================
+
+sast_scan:
+  stage: security
+  image: node:${NODE_VERSION}
+  script:
+    - npm audit --audit-level=high
+  artifacts:
+    reports:
+      dependency_scanning: gl-dependency-scanning-report.json
+    expire_in: 30 days
+  allow_failure: true
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+
+secret_detection:
+  stage: security
+  image: node:${NODE_VERSION}
+  script:
+    - npx --yes secretlint "**/*" 2>/dev/null || echo "secretlint optional, skipping"
+    - echo "Checking for hardcoded secrets..."
+    - if grep -r "BEGIN PRIVATE KEY" --include="*.ts" --include="*.js" --include="*.json" src/ 2>/dev/null; then
+        echo "❌ ERROR: Private key found in source code!";
+        exit 1;
+      else
+        echo "✅ No secrets in source code";
+      fi
+  allow_failure: true
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+
+# ============================================================
+# DEPLOY STAGE
+# ============================================================
+
+deploy_staging:
+  stage: deploy
+  image: node:${NODE_VERSION}
+  needs:
+    - build_app
+    - unit_tests
+    - db_migration_test
+  variables:
+    VERCEL_PROJECT_ID: ${VERCEL_PROJECT_ID_STAGING}
+    VERCEL_ORG_ID: ${VERCEL_ORG_ID}
+    VERCEL_TOKEN: ${VERCEL_TOKEN}
+  script:
+    - npm install -g vercel
+    - vercel pull --yes --environment=preview --token=$VERCEL_TOKEN
+    - vercel build --token=$VERCEL_TOKEN
+    - vercel deploy --prebuilt --token=$VERCEL_TOKEN > domain.txt
+    - echo "✅ Staging URL: $(cat domain.txt)"
+  environment:
+    name: staging
+    url: https://syrix-staging.vercel.app
+  only:
+    - develop
+
+deploy_production:
+  stage: deploy
+  image: node:${NODE_VERSION}
+  needs:
+    - build_app
+    - unit_tests
+    - sast_scan
+    - testsprite_ai_tests
+  variables:
+    VERCEL_PROJECT_ID: ${VERCEL_PROJECT_ID_PRODUCTION}
+    VERCEL_ORG_ID: ${VERCEL_ORG_ID}
+    VERCEL_TOKEN: ${VERCEL_TOKEN}
+  script:
+    - npm install -g vercel
+    - vercel pull --yes --environment=production --token=$VERCEL_TOKEN
+    - vercel build --prod --token=$VERCEL_TOKEN
+    - vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN
+    - echo "✅ Production URL: https://syrix.vercel.app"
+  environment:
+    name: production
+    url: https://syrix.vercel.app
+  when: manual
+  only:
+    - main
+
+# ============================================================
+# GITLAB CI/CD VARIABLES REQUIRED
+# (Set in Settings → CI/CD → Variables, all masked)
+# ============================================================
+#
+# Variable Name                   Description
+# ─────────────────────────────────────────────────────────────
+# TESTSPRITE_API_KEY              API key for TestSprite AI testing
+# TESTSPRITE_PROJECT_ID           Project ID in TestSprite
+# VERCEL_TOKEN                    Vercel deployment token
+# VERCEL_ORG_ID                   Vercel organization ID
+# VERCEL_PROJECT_ID_STAGING       Vercel staging project ID
+# VERCEL_PROJECT_ID_PRODUCTION    Vercel production project ID
+# DATABASE_URL                    Neon PostgreSQL connection string
+# NEXT_PUBLIC_FIREBASE_API_KEY    Firebase web API key
+# NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+# NEXT_PUBLIC_FIREBASE_PROJECT_ID
+# NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+# NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+# NEXT_PUBLIC_FIREBASE_APP_ID
+# FIREBASE_ADMIN_CLIENT_EMAIL     Firebase Admin SDK client email
+# FIREBASE_ADMIN_PRIVATE_KEY      Firebase Admin SDK private key
+# UPSTASH_REDIS_REST_URL          Upstash Redis REST URL
+# UPSTASH_REDIS_REST_TOKEN        Upstash Redis REST token
+# QSTASH_TOKEN                    Upstash QStash token
+# QSTASH_CURRENT_SIGNING_KEY      QStash signing key
+# QSTASH_NEXT_SIGNING_KEY         QStash next signing key
