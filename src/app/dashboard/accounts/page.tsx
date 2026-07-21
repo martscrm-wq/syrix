@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { auth } from "@/lib/firebase";
-import { onAuthStateChanged } from "firebase/auth";
-import { Calculator, FileText, BarChart3, TrendingUp, DollarSign, PieChart, AlertCircle } from "lucide-react";
+import { Calculator, FileText, TrendingUp, DollarSign, PieChart, Activity, AlertCircle } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
 
 interface TBEntry {
   accountCode: string;
@@ -28,27 +26,30 @@ interface BalanceSheetData {
 interface RatiosData {
   liquidity: { currentRatio: number; quickRatio: number; cashRatio: number };
   profitability: { grossProfitMargin: number; netProfitMargin: number; returnOnAssets: number; returnOnEquity: number };
-  solvency: { debtToAssets: number; debtToEquity: number };
-  activity: { totalAssetTurnover: number };
+  solvency: { debtToAssets: number; debtToEquity: number; timesInterestEarned: number };
+  activity: { inventoryTurnover: number; accountsReceivableTurnover: number; totalAssetTurnover: number };
 }
 
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat("ar-SA", { style: "currency", currency: "SAR" }).format(amount);
-};
+interface CashFlowData {
+  operatingActivities: number;
+  investingActivities: number;
+  financingActivities: number;
+  netChange: number;
+  beginningCash: number;
+  endingCash: number;
+}
 
-const formatPercent = (value: number) => {
-  return (value * 100).toFixed(2) + "%";
-};
+const formatPercent = (value: number) => value.toFixed(2) + "%";
 
 export default function AccountsPage() {
-  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [tbData, setTbData] = useState<TBEntry[]>([]);
   const [incomeData, setIncomeData] = useState<IncomeStatementData | null>(null);
   const [balanceData, setBalanceData] = useState<BalanceSheetData | null>(null);
   const [ratiosData, setRatiosData] = useState<RatiosData | null>(null);
+  const [cashFlowData, setCashFlowData] = useState<CashFlowData | null>(null);
   const [tbBalanced, setTbBalanced] = useState(true);
-  const [activeTab, setActiveTab] = useState<"tb" | "income" | "balance" | "ratios">("tb");
+  const [activeTab, setActiveTab] = useState<"tb" | "income" | "balance" | "ratios" | "cashflow">("tb");
   const [tbTotals, setTbTotals] = useState({ debit: 0, credit: 0 });
 
   const now = new Date();
@@ -56,50 +57,25 @@ export default function AccountsPage() {
   const month = now.getMonth() + 1;
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (!firebaseUser) {
-        router.push("/login");
-        return;
-      }
-
+    (async () => {
       try {
-        const [tbRes, incomeRes, balanceRes, ratiosRes] = await Promise.all([
+        const [tbRes, incomeRes, balanceRes, ratiosRes, cfRes] = await Promise.all([
           fetch(`/api/accounts/trial-balance?year=${year}&month=${month}`),
           fetch(`/api/accounts/income-statement?year=${year}&month=${month}`),
           fetch(`/api/accounts/balance-sheet?year=${year}&month=${month}`),
           fetch(`/api/accounts/ratios?year=${year}&month=${month}`),
+          fetch(`/api/accounts/cash-flow?year=${year}&month=${month}`),
         ]);
 
-        if (tbRes.ok) {
-          const tb = await tbRes.json();
-          setTbData(tb.entries || []);
-          setTbBalanced(tb.isBalanced);
-          setTbTotals(tb.totals);
-        }
-
-        if (incomeRes.ok) {
-          const income = await incomeRes.json();
-          setIncomeData(income);
-        }
-
-        if (balanceRes.ok) {
-          const bs = await balanceRes.json();
-          setBalanceData(bs);
-        }
-
-        if (ratiosRes.ok) {
-          const r = await ratiosRes.json();
-          setRatiosData(r.ratios);
-        }
-      } catch (err) {
-        console.error("Error fetching accounts data:", err);
-      }
-
+        if (tbRes.ok) { const tb = await tbRes.json(); setTbData(tb.entries || []); setTbBalanced(tb.isBalanced); setTbTotals(tb.totals); }
+        if (incomeRes.ok) setIncomeData(await incomeRes.json());
+        if (balanceRes.ok) setBalanceData(await balanceRes.json());
+        if (ratiosRes.ok) { const r = await ratiosRes.json(); setRatiosData(r.ratios); }
+        if (cfRes.ok) setCashFlowData(await cfRes.json());
+      } catch (err) { console.error("Error fetching accounts data:", err); }
       setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [router, year, month]);
+    })();
+  }, [year, month]);
 
   if (loading) {
     return (
@@ -109,13 +85,19 @@ export default function AccountsPage() {
     );
   }
 
+  const tabs = [
+    { key: "tb" as const, label: "ميزان المراجعة", icon: FileText },
+    { key: "income" as const, label: "قائمة الدخل", icon: TrendingUp },
+    { key: "balance" as const, label: "الميزانية", icon: PieChart },
+    { key: "cashflow" as const, label: "التدفق النقدي", icon: Activity },
+    { key: "ratios" as const, label: "النسب المالية", icon: Calculator },
+  ];
+
   return (
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-slate-900">موديول الحسابات</h1>
-        <p className="text-slate-500 mt-1">
-          {year}/{month.toString().padStart(2, "0")} — تقارير مالية شاملة
-        </p>
+        <p className="text-slate-500 mt-1">{year}/{month.toString().padStart(2, "0")} — تقارير مالية شاملة</p>
         {!tbBalanced && (
           <div className="mt-3 flex items-center gap-2 bg-amber-50 text-amber-700 p-3 rounded-lg text-sm border border-amber-200">
             <AlertCircle className="w-5 h-5 flex-shrink-0" />
@@ -126,44 +108,25 @@ export default function AccountsPage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <div className="bg-white rounded-xl border border-slate-200 p-4">
-          <div className="flex items-center gap-2 text-blue-600 mb-2">
-            <DollarSign className="w-5 h-5" />
-            <span className="text-xs font-medium">الإيرادات</span>
+        {[
+          { label: "الإيرادات", value: incomeData?.revenue || 0, icon: DollarSign, color: "text-blue-600" },
+          { label: "المصروفات", value: incomeData?.expenses || 0, icon: TrendingUp, color: "text-rose-600" },
+          { label: "صافي الدخل", value: incomeData?.netIncome || 0, icon: TrendingUp, color: "text-emerald-600" },
+          { label: "النقدية", value: cashFlowData?.endingCash || 0, icon: DollarSign, color: "text-purple-600" },
+        ].map((card, i) => (
+          <div key={i} className="bg-white rounded-xl border border-slate-200 p-4">
+            <div className={`flex items-center gap-2 ${card.color} mb-2`}>
+              <card.icon className="w-5 h-5" />
+              <span className="text-xs font-medium">{card.label}</span>
+            </div>
+            <p className="text-lg font-bold text-slate-900">{formatCurrency(card.value)}</p>
           </div>
-          <p className="text-lg font-bold text-slate-900">{formatCurrency(incomeData?.revenue || 0)}</p>
-        </div>
-        <div className="bg-white rounded-xl border border-slate-200 p-4">
-          <div className="flex items-center gap-2 text-rose-600 mb-2">
-            <BarChart3 className="w-5 h-5" />
-            <span className="text-xs font-medium">المصروفات</span>
-          </div>
-          <p className="text-lg font-bold text-slate-900">{formatCurrency(incomeData?.expenses || 0)}</p>
-        </div>
-        <div className="bg-white rounded-xl border border-slate-200 p-4">
-          <div className="flex items-center gap-2 text-emerald-600 mb-2">
-            <TrendingUp className="w-5 h-5" />
-            <span className="text-xs font-medium">صافي الدخل</span>
-          </div>
-          <p className="text-lg font-bold text-slate-900">{formatCurrency(incomeData?.netIncome || 0)}</p>
-        </div>
-        <div className="bg-white rounded-xl border border-slate-200 p-4">
-          <div className="flex items-center gap-2 text-purple-600 mb-2">
-            <PieChart className="w-5 h-5" />
-            <span className="text-xs font-medium">الأصول</span>
-          </div>
-          <p className="text-lg font-bold text-slate-900">{formatCurrency(balanceData?.assets || 0)}</p>
-        </div>
+        ))}
       </div>
 
       {/* Tabs */}
       <div className="flex gap-1 bg-slate-100 rounded-lg p-1 mb-6 overflow-x-auto">
-        {[
-          { key: "tb" as const, label: "ميزان المراجعة", icon: FileText },
-          { key: "income" as const, label: "قائمة الدخل", icon: TrendingUp },
-          { key: "balance" as const, label: "الميزانية", icon: PieChart },
-          { key: "ratios" as const, label: "النسب المالية", icon: Calculator },
-        ].map((tab) => (
+        {tabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
@@ -183,8 +146,6 @@ export default function AccountsPage() {
           <div className="p-4 border-b border-slate-200">
             <h2 className="font-semibold text-slate-900">ميزان المراجعة</h2>
           </div>
-
-          {/* Desktop table */}
           <div className="table-responsive">
             <table className="w-full text-sm">
               <thead>
@@ -205,9 +166,7 @@ export default function AccountsPage() {
                   </tr>
                 ))}
                 {tbData.length === 0 && (
-                  <tr>
-                    <td colSpan={4} className="p-6 text-center text-slate-400">لا توجد قيود في هذه الفترة</td>
-                  </tr>
+                  <tr><td colSpan={4} className="p-6 text-center text-slate-400">لا توجد قيود في هذه الفترة</td></tr>
                 )}
               </tbody>
               <tfoot className="bg-slate-50 border-t border-slate-200">
@@ -219,33 +178,13 @@ export default function AccountsPage() {
               </tfoot>
             </table>
           </div>
-
-          {/* Mobile cards */}
-          <div className="table-card-view divide-y divide-slate-100">
-            {tbData.map((entry, i) => (
-              <div key={i} className="p-4">
-                <div className="flex justify-between items-start mb-1">
-                  <span className="text-xs text-slate-500">{entry.accountCode}</span>
-                  {entry.debit > 0 && <span className="text-sm font-medium text-slate-900">{formatCurrency(entry.debit)} مدين</span>}
-                  {entry.credit > 0 && <span className="text-sm font-medium text-slate-900">{formatCurrency(entry.credit)} دائن</span>}
-                </div>
-                <p className="font-medium text-slate-900">{entry.accountName}</p>
-              </div>
-            ))}
-            <div className="p-4 bg-slate-50 flex justify-between font-semibold">
-              <span>المجموع</span>
-              <span className="text-blue-700">{formatCurrency(tbTotals.debit)} / {formatCurrency(tbTotals.credit)}</span>
-            </div>
-          </div>
         </div>
       )}
 
       {/* Income Statement */}
       {activeTab === "income" && incomeData && (
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-          <div className="p-4 border-b border-slate-200">
-            <h2 className="font-semibold text-slate-900">قائمة الدخل</h2>
-          </div>
+          <div className="p-4 border-b border-slate-200"><h2 className="font-semibold text-slate-900">قائمة الدخل</h2></div>
           <div className="p-4 space-y-3">
             <div className="flex justify-between py-2">
               <span className="text-slate-600">الإيرادات</span>
@@ -268,9 +207,7 @@ export default function AccountsPage() {
       {/* Balance Sheet */}
       {activeTab === "balance" && balanceData && (
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-          <div className="p-4 border-b border-slate-200">
-            <h2 className="font-semibold text-slate-900">الميزانية العمومية</h2>
-          </div>
+          <div className="p-4 border-b border-slate-200"><h2 className="font-semibold text-slate-900">الميزانية العمومية</h2></div>
           <div className="p-4 space-y-3">
             <h3 className="text-sm font-medium text-slate-500">الأصول</h3>
             <div className="flex justify-between py-2">
@@ -296,14 +233,60 @@ export default function AccountsPage() {
         </div>
       )}
 
+      {/* Cash Flow Statement */}
+      {activeTab === "cashflow" && cashFlowData && (
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+          <div className="p-4 border-b border-slate-200"><h2 className="font-semibold text-slate-900">قائمة التدفقات النقدية</h2></div>
+          <div className="p-4 space-y-3">
+            <h3 className="text-sm font-medium text-slate-500">الأنشطة التشغيلية</h3>
+            <div className="flex justify-between py-2">
+              <span className="text-slate-600">صافي التدفق النقدي من الأنشطة التشغيلية</span>
+              <span className={`font-medium ${cashFlowData.operatingActivities >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
+                {formatCurrency(cashFlowData.operatingActivities)}
+              </span>
+            </div>
+
+            <h3 className="text-sm font-medium text-slate-500 pt-3 border-t border-slate-100">الأنشطة الاستثمارية</h3>
+            <div className="flex justify-between py-2">
+              <span className="text-slate-600">صافي التدفق النقدي من الأنشطة الاستثمارية</span>
+              <span className={`font-medium ${cashFlowData.investingActivities >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
+                {formatCurrency(cashFlowData.investingActivities)}
+              </span>
+            </div>
+
+            <h3 className="text-sm font-medium text-slate-500 pt-3 border-t border-slate-100">الأنشطة التمويلية</h3>
+            <div className="flex justify-between py-2">
+              <span className="text-slate-600">صافي التدفق النقدي من الأنشطة التمويلية</span>
+              <span className={`font-medium ${cashFlowData.financingActivities >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
+                {formatCurrency(cashFlowData.financingActivities)}
+              </span>
+            </div>
+
+            <div className="border-t-2 border-slate-200 pt-3 space-y-2">
+              <div className="flex justify-between py-1">
+                <span className="text-slate-600">صافي الزيادة (النقص) في النقدية</span>
+                <span className={`font-semibold ${cashFlowData.netChange >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
+                  {formatCurrency(cashFlowData.netChange)}
+                </span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-slate-600">النقدية أول الفترة</span>
+                <span className="font-medium text-slate-900">{formatCurrency(cashFlowData.beginningCash)}</span>
+              </div>
+              <div className="flex justify-between py-1 border-t border-slate-100 pt-2">
+                <span className="font-bold text-slate-900">النقدية آخر الفترة</span>
+                <span className="font-bold text-lg text-blue-600">{formatCurrency(cashFlowData.endingCash)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Financial Ratios */}
       {activeTab === "ratios" && ratiosData && (
         <div className="space-y-4">
-          {/* Liquidity */}
           <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-            <div className="p-4 border-b border-slate-200">
-              <h2 className="font-semibold text-slate-900">نسب السيولة</h2>
-            </div>
+            <div className="p-4 border-b border-slate-200"><h2 className="font-semibold text-slate-900">نسب السيولة</h2></div>
             <div className="divide-y divide-slate-100">
               {[
                 { label: "Current Ratio", value: ratiosData.liquidity.currentRatio, desc: "الأصول المتداولة / الخصوم المتداولة" },
@@ -313,9 +296,7 @@ export default function AccountsPage() {
                 <div key={i} className="p-4">
                   <div className="flex justify-between items-center mb-1">
                     <span className="font-medium text-slate-900">{item.label}</span>
-                    <span className={`font-semibold ${item.value >= 1 ? "text-emerald-600" : "text-amber-600"}`}>
-                      {item.value.toFixed(2)}
-                    </span>
+                    <span className={`font-semibold ${item.value >= 1 ? "text-emerald-600" : "text-amber-600"}`}>{item.value.toFixed(2)}</span>
                   </div>
                   <p className="text-xs text-slate-400">{item.desc}</p>
                 </div>
@@ -323,11 +304,8 @@ export default function AccountsPage() {
             </div>
           </div>
 
-          {/* Profitability */}
           <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-            <div className="p-4 border-b border-slate-200">
-              <h2 className="font-semibold text-slate-900">نسب الربحية</h2>
-            </div>
+            <div className="p-4 border-b border-slate-200"><h2 className="font-semibold text-slate-900">نسب الربحية</h2></div>
             <div className="divide-y divide-slate-100">
               {[
                 { label: "Gross Profit Margin", value: ratiosData.profitability.grossProfitMargin },
@@ -343,36 +321,33 @@ export default function AccountsPage() {
             </div>
           </div>
 
-          {/* Solvency */}
           <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-            <div className="p-4 border-b border-slate-200">
-              <h2 className="font-semibold text-slate-900">نسب الملاءة</h2>
-            </div>
+            <div className="p-4 border-b border-slate-200"><h2 className="font-semibold text-slate-900">نسب الملاءة</h2></div>
             <div className="divide-y divide-slate-100">
               {[
                 { label: "Debt to Assets", value: ratiosData.solvency.debtToAssets },
                 { label: "Debt to Equity", value: ratiosData.solvency.debtToEquity },
+                { label: "Times Interest Earned", value: ratiosData.solvency.timesInterestEarned },
               ].map((item, i) => (
                 <div key={i} className="p-4 flex justify-between items-center">
                   <span className="font-medium text-slate-900">{item.label}</span>
-                  <span className="font-semibold text-slate-900">{formatPercent(item.value)}</span>
+                  <span className="font-semibold text-slate-900">{item.label.includes("Times") ? item.value.toFixed(2) + "x" : formatPercent(item.value)}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Activity */}
           <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-            <div className="p-4 border-b border-slate-200">
-              <h2 className="font-semibold text-slate-900">نسب النشاط</h2>
-            </div>
+            <div className="p-4 border-b border-slate-200"><h2 className="font-semibold text-slate-900">نسب النشاط</h2></div>
             <div className="divide-y divide-slate-100">
               {[
+                { label: "Inventory Turnover", value: ratiosData.activity.inventoryTurnover },
+                { label: "AR Turnover", value: ratiosData.activity.accountsReceivableTurnover },
                 { label: "Total Asset Turnover", value: ratiosData.activity.totalAssetTurnover },
               ].map((item, i) => (
                 <div key={i} className="p-4 flex justify-between items-center">
                   <span className="font-medium text-slate-900">{item.label}</span>
-                  <span className="font-semibold text-slate-900">{item.value.toFixed(2)}</span>
+                  <span className="font-semibold text-slate-900">{item.value.toFixed(2)}x</span>
                 </div>
               ))}
             </div>

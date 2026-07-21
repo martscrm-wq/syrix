@@ -38,16 +38,22 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    const getBalance = (accounts: typeof revenueAccounts) => {
-      return accounts.reduce((sum, acct) => {
+    const calcRevenue = (accounts: typeof revenueAccounts) =>
+      accounts.reduce((sum, acct) => {
         const credit = acct.journalLines.reduce((s, l) => s + l.credit, 0);
         const debit = acct.journalLines.reduce((s, l) => s + l.debit, 0);
-        return sum + (credit - debit);
+        return sum + (credit - debit); // Revenue: credit increases, debit decreases
       }, 0);
-    };
 
-    const totalRevenue = getBalance(revenueAccounts);
-    const totalExpenses = getBalance(expenseAccounts);
+    const calcExpenses = (accounts: typeof expenseAccounts) =>
+      accounts.reduce((sum, acct) => {
+        const debit = acct.journalLines.reduce((s, l) => s + l.debit, 0);
+        const credit = acct.journalLines.reduce((s, l) => s + l.credit, 0);
+        return sum + (debit - credit); // Expenses: debit increases, credit decreases
+      }, 0);
+
+    const totalRevenue = calcRevenue(revenueAccounts);
+    const totalExpenses = calcExpenses(expenseAccounts);
 
     const incomeStatement = {
       revenue: totalRevenue,

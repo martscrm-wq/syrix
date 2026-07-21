@@ -51,6 +51,11 @@ const chartOfAccounts = [
   { code: "BAD_DEBT_EXP", name: "Bad Debt Expense", nameAr: "مصروف الديون المعدومة", type: "expense", category: "expense" },
   { code: "MISC_EXP", name: "Miscellaneous Expense", nameAr: "مصروف متنوعة", type: "expense", category: "expense" },
   { code: "OFFICE_EXP", name: "Office Expense", nameAr: "مصروف عمومية", type: "expense", category: "expense" },
+  // Missing accounts per requirements
+  { code: "TRADEMARKS", name: "Trademarks", nameAr: "العلامات التجارية", type: "asset", category: "intangible_asset" },
+  { code: "ACCUM_DEP", name: "Accumulated Depreciation", nameAr: "مجمع الإهلاك", type: "asset", category: "contra_asset" },
+  { code: "DRAWINGS", name: "Drawings", nameAr: "المسحوبات", type: "equity", category: "equity" },
+  { code: "COGS", name: "Cost of Goods Sold", nameAr: "تكلفة البضاعة المباعة", type: "expense", category: "expense" },
 ];
 
 async function main() {
