@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Calculator, FileText, TrendingUp, DollarSign, PieChart, Activity, AlertCircle } from "lucide-react";
+import { Calculator, FileText, TrendingUp, DollarSign, PieChart, Activity, AlertCircle, BookOpen } from "lucide-react";
+import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
 
 interface TBEntry {
@@ -49,7 +50,7 @@ export default function AccountsPage() {
   const [ratiosData, setRatiosData] = useState<RatiosData | null>(null);
   const [cashFlowData, setCashFlowData] = useState<CashFlowData | null>(null);
   const [tbBalanced, setTbBalanced] = useState(true);
-  const [activeTab, setActiveTab] = useState<"tb" | "income" | "balance" | "ratios" | "cashflow">("tb");
+  const [activeTab, setActiveTab] = useState<"tb" | "income" | "balance" | "ratios" | "cashflow" | "journal">("tb");
   const [tbTotals, setTbTotals] = useState({ debit: 0, credit: 0 });
 
   const now = new Date();
@@ -91,6 +92,7 @@ export default function AccountsPage() {
     { key: "balance" as const, label: "الميزانية", icon: PieChart },
     { key: "cashflow" as const, label: "التدفق النقدي", icon: Activity },
     { key: "ratios" as const, label: "النسب المالية", icon: Calculator },
+    { key: "journal" as const, label: "قيود اليومية", icon: BookOpen },
   ];
 
   return (
@@ -351,6 +353,21 @@ export default function AccountsPage() {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Journal Entries Tab */}
+      {activeTab === "journal" && (
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+          <div className="p-6 text-center">
+            <BookOpen className="w-12 h-12 text-blue-600 mx-auto mb-3" />
+            <h2 className="font-semibold text-slate-900 mb-2">دفتر اليومية العامة</h2>
+            <p className="text-slate-500 mb-4">إدارة القيود المحاسبية - إضافة وتعديل وحذف مع قوالب جاهزة</p>
+            <Link href="/dashboard/accounts/journal"
+              className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg text-sm font-medium hover:bg-blue-700">
+              <BookOpen className="w-4 h-4" />فتح دفتر اليومية
+            </Link>
           </div>
         </div>
       )}

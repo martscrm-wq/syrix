@@ -283,11 +283,12 @@ model JournalEntry {
 }
 
 model JournalLine {
-  id        String  @id @default(cuid())
-  entryId   String
-  accountId String
-  debit     Float   @default(0)
-  credit    Float   @default(0)
+  id          String  @id @default(cuid())
+  entryId     String
+  accountId   String
+  debit       Float   @default(0)
+  credit      Float   @default(0)
+  description String?
 
   entry   JournalEntry @relation(fields: [entryId], references: [id])
   account Account      @relation(fields: [accountId], references: [id])

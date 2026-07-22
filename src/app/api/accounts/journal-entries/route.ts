@@ -77,10 +77,31 @@ export async function GET(request: NextRequest) {
   const page = parseInt(searchParams.get("page") || "1");
   const limit = Math.min(parseInt(searchParams.get("limit") || "50"), 50);
   const skip = (page - 1) * limit;
+  const search = searchParams.get("search") || "";
+  const category = searchParams.get("category") || "";
 
   try {
+    const where: Record<string, unknown> = {
+      deletedAt: null,
+    };
+
+    if (search) {
+      where.description = { contains: search, mode: "insensitive" };
+    }
+
+    if (category) {
+      where.lines = {
+        some: {
+          account: {
+            category: category,
+          },
+        },
+      };
+    }
+
     const [entries, total] = await Promise.all([
       prisma.journalEntry.findMany({
+        where,
         skip,
         take: limit,
         orderBy: { createdAt: "desc" },
@@ -93,7 +114,7 @@ export async function GET(request: NextRequest) {
           },
         },
       }),
-      prisma.journalEntry.count(),
+      prisma.journalEntry.count({ where }),
     ]);
 
     return NextResponse.json({
