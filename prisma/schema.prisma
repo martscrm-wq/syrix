@@ -270,6 +270,7 @@ model JournalEntry {
   entryDate   DateTime
   description String
   reference   String?
+  category    String   @default("operating") // opening | operating | adjusting | closing | reversing | advanced
   createdById String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

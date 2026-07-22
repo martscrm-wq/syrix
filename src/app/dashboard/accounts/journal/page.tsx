@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { Fragment, useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   Plus, Trash2, Edit2, X, Search, FileText, Copy, CheckCircle,
@@ -9,9 +9,9 @@ import {
 import { formatCurrency } from "@/lib/utils";
 import { JOURNAL_TEMPLATES, type JournalTemplate } from "@/lib/journal-templates";
 
-interface Account { id: string; code: string; nameAr: string; type: string; }
+interface Account { id: string; code: string; nameAr: string; type: string; category: string; }
 interface JournalLine { id?: string; accountId: string; debit: number; credit: number; account?: Account; description?: string; }
-interface JournalEntry { id: string; entryDate: string; description: string; reference?: string; lines: JournalLine[]; createdAt: string; }
+interface JournalEntry { id: string; entryDate: string; description: string; reference?: string; category?: string; lines: JournalLine[]; createdAt: string; }
 
 const CATEGORY_LABELS: Record<string, string> = {
   opening: "قيود البدء", operating: "قيود تشغيلية", adjusting: "قيود تسوية",
@@ -36,6 +36,7 @@ export default function JournalEntriesPage() {
     entryDate: new Date().toISOString().split("T")[0],
     description: "",
     reference: "",
+    category: "operating",
     lines: [
       { accountId: "", debit: 0, credit: 0, description: "" },
       { accountId: "", debit: 0, credit: 0, description: "" },
@@ -44,32 +45,19 @@ export default function JournalEntriesPage() {
 
   const fetchAccounts = async () => {
     try {
-      const res = await fetch("/api/accounts/trial-balance?year=2026&month=1");
+      const res = await fetch("/api/accounts/list");
       if (res.ok) {
         const data = await res.json();
-        if (data.accounts) setAccounts(data.accounts.map((a: any) => ({ id: a.accountId, code: a.accountCode, nameAr: a.accountName, type: "" })));
+        if (data.accounts) setAccounts(data.accounts);
       }
-    } catch {}
-    // Fallback: fetch from a simple endpoint or use hardcoded list
-    if (accounts.length === 0) {
-      try {
-        const res = await fetch("/api/accounts/journal-entries?limit=1");
-        if (res.ok) {
-          const data = await res.json();
-          if (data.entries?.[0]?.lines?.[0]?.account) {
-            const accs = new Map<string, Account>();
-            data.entries.forEach((e: JournalEntry) => e.lines.forEach((l: JournalLine) => { if (l.account) accs.set(l.account.id, l.account); }));
-            setAccounts(Array.from(accs.values()));
-          }
-        }
-      } catch {}
-    }
+    } catch (err) { console.error("Failed to fetch accounts:", err); }
   };
 
   const fetchEntries = useCallback(async () => {
     try {
-      const params = new URLSearchParams({ limit: "100" });
+      const params = new URLSearchParams({ limit: "200" });
       if (search) params.set("search", search);
+      if (filterCategory !== "all") params.set("category", filterCategory);
       const res = await fetch(`/api/accounts/journal-entries?${params}`);
       if (res.ok) {
         const data = await res.json();
@@ -77,7 +65,7 @@ export default function JournalEntriesPage() {
       }
     } catch (err) { console.error(err); }
     setLoading(false);
-  }, [search]);
+  }, [search, filterCategory]);
 
   useEffect(() => { fetchAccounts(); }, []);
   useEffect(() => { fetchEntries(); }, [fetchEntries]);
@@ -85,7 +73,7 @@ export default function JournalEntriesPage() {
   const resetForm = () => {
     setForm({
       entryDate: new Date().toISOString().split("T")[0],
-      description: "", reference: "",
+      description: "", reference: "", category: "operating",
       lines: [
         { accountId: "", debit: 0, credit: 0, description: "" },
         { accountId: "", debit: 0, credit: 0, description: "" },
@@ -103,6 +91,7 @@ export default function JournalEntriesPage() {
       entryDate: entry.entryDate.split("T")[0],
       description: entry.description,
       reference: entry.reference || "",
+      category: entry.category || "operating",
       lines: entry.lines.map(l => ({
         accountId: l.accountId,
         debit: l.debit,
@@ -117,6 +106,7 @@ export default function JournalEntriesPage() {
     setForm(prev => ({
       ...prev,
       description: template.description,
+      category: template.category,
       lines: template.lines.map(l => ({
         accountId: l.accountId,
         debit: l.side === "debit" ? (l.defaultAmount || 0) : 0,
@@ -170,6 +160,7 @@ export default function JournalEntriesPage() {
           entryDate: form.entryDate,
           description: form.description,
           reference: form.reference,
+          category: form.category,
           lines: validLines.map(l => ({ accountId: l.accountId, debit: l.debit || 0, credit: l.credit || 0, description: l.description })),
         }),
       });
@@ -214,20 +205,7 @@ export default function JournalEntriesPage() {
     else { setSelectedIds(new Set(filteredEntries.map(e => e.id))); }
   };
 
-  const filteredEntries = entries.filter(e => {
-    if (filterCategory !== "all") {
-      const desc = e.description.toLowerCase();
-      const catMatch =
-        (filterCategory === "opening" && (desc.includes("بدء") || desc.includes("رأس المال") || desc.includes("افتتاح"))) ||
-        (filterCategory === "operating" && (desc.includes("بيع") || desc.includes("شراء") || desc.includes("دفع") || desc.includes("تحصيل") || desc.includes("إيداع") || desc.includes("صرف") || desc.includes("رواتب") || desc.includes("إيجار"))) ||
-        (filterCategory === "adjusting" && (desc.includes("إهلاك") || desc.includes("استحقاق") || desc.includes("تسوية") || desc.includes("ضريبة مؤجلة"))) ||
-        (filterCategory === "closing" && (desc.includes("إقفال") || desc.includes("ملخص الدخل"))) ||
-        (filterCategory === "reversing" && desc.includes("عكس")) ||
-        (filterCategory === "advanced" && (desc.includes("إعادة تقييم") || desc.includes("شهرة") || desc.includes("استحواذ")));
-      if (!catMatch) return false;
-    }
-    return true;
-  });
+  const filteredEntries = entries;
 
   const groupedTemplates = JOURNAL_TEMPLATES.reduce((acc, t) => {
     (acc[t.category] = acc[t.category] || []).push(t);
@@ -373,18 +351,25 @@ export default function JournalEntriesPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="p-4 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">التاريخ</label>
                   <input type="date" value={form.entryDate} onChange={e => setForm({ ...form, entryDate: e.target.value })}
                     className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm min-h-[44px]" required />
                 </div>
                 <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">نوع القيد</label>
+                  <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}
+                    className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm min-h-[44px]">
+                    {Object.entries(CATEGORY_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                  </select>
+                </div>
+                <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">رقم المستند</label>
                   <input type="text" value={form.reference} onChange={e => setForm({ ...form, reference: e.target.value })}
                     className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm min-h-[44px]" placeholder="فاتورة / إيصال / كشف" />
                 </div>
-                <div className="md:col-span-1">
+                <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">البيان الوصفي</label>
                   <input type="text" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })}
                     className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm min-h-[44px]" placeholder="شرح القيد..." required />
@@ -463,5 +448,3 @@ export default function JournalEntriesPage() {
     </div>
   );
 }
-
-import { Fragment } from "react";

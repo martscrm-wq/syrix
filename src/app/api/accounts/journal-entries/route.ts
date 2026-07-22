@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { entryDate, description, reference, lines } = body;
+    const { entryDate, description, reference, category, lines } = body;
 
     if (!entryDate || !description || !lines || lines.length < 2) {
       return NextResponse.json(
@@ -18,6 +18,9 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    const validCategories = ["opening", "operating", "adjusting", "closing", "reversing", "advanced"];
+    const entryCategory = validCategories.includes(category) ? category : "operating";
 
     const totalDebit = lines.reduce((sum: number, l: { debit: number }) => sum + (l.debit || 0), 0);
     const totalCredit = lines.reduce((sum: number, l: { credit: number }) => sum + (l.credit || 0), 0);
@@ -40,6 +43,7 @@ export async function POST(request: NextRequest) {
           entryDate: new Date(entryDate),
           description,
           reference,
+          category: entryCategory,
           createdById: user.uid,
           lines: {
             create: lines.map((line: { accountId: string; debit?: number; credit?: number }) => ({
@@ -75,7 +79,7 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const page = parseInt(searchParams.get("page") || "1");
-  const limit = Math.min(parseInt(searchParams.get("limit") || "50"), 50);
+  const limit = Math.min(parseInt(searchParams.get("limit") || "50"), 200);
   const skip = (page - 1) * limit;
   const search = searchParams.get("search") || "";
   const category = searchParams.get("category") || "";
@@ -89,14 +93,8 @@ export async function GET(request: NextRequest) {
       where.description = { contains: search, mode: "insensitive" };
     }
 
-    if (category) {
-      where.lines = {
-        some: {
-          account: {
-            category: category,
-          },
-        },
-      };
+    if (category && category !== "all") {
+      where.category = category;
     }
 
     const [entries, total] = await Promise.all([

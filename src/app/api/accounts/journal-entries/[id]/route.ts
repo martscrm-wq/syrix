@@ -41,11 +41,14 @@ export async function PUT(
 
   try {
     const body = await request.json();
-    const { entryDate, description, reference, lines } = body;
+    const { entryDate, description, reference, category, lines } = body;
 
     if (!entryDate || !description || !lines || lines.length < 2) {
       return NextResponse.json({ error: "تاريخ القيد والوصف وبندان على الأقل مطلوبون" }, { status: 400 });
     }
+
+    const validCategories = ["opening", "operating", "adjusting", "closing", "reversing", "advanced"];
+    const entryCategory = validCategories.includes(category) ? category : "operating";
 
     const totalDebit = lines.reduce((sum: number, l: { debit: number }) => sum + (l.debit || 0), 0);
     const totalCredit = lines.reduce((sum: number, l: { credit: number }) => sum + (l.credit || 0), 0);
@@ -67,6 +70,7 @@ export async function PUT(
           entryDate: new Date(entryDate),
           description,
           reference,
+          category: entryCategory,
           lines: {
             create: lines.map((line: { accountId: string; debit?: number; credit?: number; description?: string }) => ({
               accountId: line.accountId,
