@@ -6,7 +6,7 @@ import { auth } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { ShoppingCart, TrendingUp, DollarSign, Users, ArrowRight, CheckCircle, XCircle } from "lucide-react";
 
-const formatCurrency = (n: number) => new Intl.NumberFormat("ar-SA", { style: "currency", currency: "SAR" }).format(n);
+const formatCurrency = (n: number) => new Intl.NumberFormat("ar-EG", { style: "currency", currency: "EGP" }).format(n);
 
 const stages = [
   { key: "lead", label: "عميل محتمل", color: "bg-blue-100 text-blue-700" },

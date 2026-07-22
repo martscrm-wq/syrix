@@ -6,7 +6,7 @@ import { auth } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { Megaphone, Users, BarChart3, Target } from "lucide-react";
 
-const formatCurrency = (n: number) => new Intl.NumberFormat("ar-SA", { style: "currency", currency: "SAR" }).format(n);
+const formatCurrency = (n: number) => new Intl.NumberFormat("ar-EG", { style: "currency", currency: "EGP" }).format(n);
 
 export default function MarketingPage() {
   const router = useRouter();

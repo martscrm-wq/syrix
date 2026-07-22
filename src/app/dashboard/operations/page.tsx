@@ -7,10 +7,10 @@ import { onAuthStateChanged } from "firebase/auth";
 import { Building2, CalendarCheck, FileText, AlertTriangle, Plus, Building } from "lucide-react";
 
 const formatCurrency = (amount: number) =>
-  new Intl.NumberFormat("ar-SA", { style: "currency", currency: "SAR" }).format(amount);
+  new Intl.NumberFormat("ar-EG", { style: "currency", currency: "EGP" }).format(amount);
 
 const formatDate = (d: string | Date) =>
-  new Intl.DateTimeFormat("ar-SA", { dateStyle: "medium" }).format(new Date(d));
+  new Intl.DateTimeFormat("ar-EG", { dateStyle: "medium" }).format(new Date(d));
 
 export default function OperationsPage() {
   const router = useRouter();

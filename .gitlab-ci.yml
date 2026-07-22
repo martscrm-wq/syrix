@@ -50,7 +50,7 @@ security:
   script:
     - npm install --legacy-peer-deps
     - npm audit --audit-level=high || true
-    - npx testsprite security-scan || true
+    - npm audit fix || true
   allow_failure: true
 
 deploy-staging:

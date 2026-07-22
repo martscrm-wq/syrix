@@ -7,10 +7,10 @@ import { onAuthStateChanged } from "firebase/auth";
 import { Users, Clock, CalendarDays, DollarSign, UserPlus, LogIn, LogOut, CheckCircle, XCircle, Plus } from "lucide-react";
 
 const formatCurrency = (amount: number) =>
-  new Intl.NumberFormat("ar-SA", { style: "currency", currency: "SAR" }).format(amount);
+  new Intl.NumberFormat("ar-EG", { style: "currency", currency: "EGP" }).format(amount);
 
 const formatDate = (d: string | Date) =>
-  new Intl.DateTimeFormat("ar-SA", { dateStyle: "medium" }).format(new Date(d));
+  new Intl.DateTimeFormat("ar-EG", { dateStyle: "medium" }).format(new Date(d));
 
 export default function HRPage() {
   const router = useRouter();
@@ -232,8 +232,8 @@ export default function HRPage() {
                 {attendanceRecords.map((rec) => (
                   <tr key={rec.id} className="border-t border-slate-100">
                     <td className="p-3 text-slate-900">{formatDate(rec.date)}</td>
-                    <td className="p-3 text-center text-slate-900">{rec.checkIn ? new Date(rec.checkIn).toLocaleTimeString("ar-SA") : "-"}</td>
-                    <td className="p-3 text-center text-slate-900">{rec.checkOut ? new Date(rec.checkOut).toLocaleTimeString("ar-SA") : "-"}</td>
+                    <td className="p-3 text-center text-slate-900">{rec.checkIn ? new Date(rec.checkIn).toLocaleTimeString("ar-EG") : "-"}</td>
+                    <td className="p-3 text-center text-slate-900">{rec.checkOut ? new Date(rec.checkOut).toLocaleTimeString("ar-EG") : "-"}</td>
                     <td className="p-3 text-center">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         rec.status === "present" ? "bg-emerald-100 text-emerald-700" :

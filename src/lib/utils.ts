@@ -6,14 +6,14 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("ar-SA", {
+  return new Intl.NumberFormat("ar-EG", {
     style: "currency",
-    currency: "SAR",
+    currency: "EGP",
   }).format(amount);
 }
 
 export function formatDate(date: Date | string): string {
-  return new Intl.DateTimeFormat("ar-SA", {
+  return new Intl.DateTimeFormat("ar-EG", {
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -21,7 +21,7 @@ export function formatDate(date: Date | string): string {
 }
 
 export function formatDateShort(date: Date | string): string {
-  return new Intl.DateTimeFormat("ar-SA", {
+  return new Intl.DateTimeFormat("ar-EG", {
     year: "numeric",
     month: "short",
     day: "numeric",
