@@ -3,8 +3,6 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { signOut } from "firebase/auth";
-import { auth } from "@/lib/firebase";
 import {
   LayoutDashboard,
   Users,
@@ -40,7 +38,6 @@ export default function Sidebar() {
   ];
 
   const handleLogout = async () => {
-    await signOut(auth);
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/login");
   };

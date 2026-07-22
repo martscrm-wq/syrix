@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { auth } from "@/lib/firebase";
-import { onAuthStateChanged } from "firebase/auth";
+
 import { Megaphone, Users, BarChart3, Target } from "lucide-react";
 
 const formatCurrency = (n: number) => new Intl.NumberFormat("ar-EG", { style: "currency", currency: "EGP" }).format(n);
@@ -16,16 +15,17 @@ export default function MarketingPage() {
   const [leads, setLeads] = useState<any[]>([]);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
-      if (!fbUser) { router.push("/login"); return; }
+    const checkAuth = async () => {
       try {
+        const meRes = await fetch("/api/auth/me");
+        if (!meRes.ok) { router.push("/login"); return; }
         const [cRes, lRes] = await Promise.all([fetch("/api/mkt/campaigns?limit=50"), fetch("/api/mkt/leads?limit=50")]);
         if (cRes.ok) { const d = await cRes.json(); setCampaigns(d.campaigns || []); }
         if (lRes.ok) { const d = await lRes.json(); setLeads(d.leads || []); }
       } catch (e) { console.error(e); }
       setLoading(false);
-    });
-    return () => unsubscribe();
+    };
+    checkAuth();
   }, [router]);
 
   const badge = (status: string, map: Record<string, string>) => {

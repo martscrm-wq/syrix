@@ -2,23 +2,27 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { auth } from "@/lib/firebase";
-import { onAuthStateChanged } from "firebase/auth";
+
 
 export default function HomePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        router.push("/dashboard");
-      } else {
+    const checkAuth = async () => {
+      try {
+        const meRes = await fetch("/api/auth/me");
+        if (meRes.ok) {
+          router.push("/dashboard");
+        } else {
+          router.push("/login");
+        }
+      } catch {
         router.push("/login");
       }
       setLoading(false);
-    });
-    return () => unsubscribe();
+    };
+    checkAuth();
   }, [router]);
 
   if (loading) {

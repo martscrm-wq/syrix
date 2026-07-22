@@ -3,9 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { auth } from "@/lib/firebase";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { Building2, Lock, Mail, AlertCircle, WifiOff, User } from "lucide-react";
+
+import { Building2, Lock, Mail, AlertCircle, User } from "lucide-react";
 
 export default function LoginPage() {
   const t = useTranslations("login");
@@ -15,7 +14,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [devMode, setDevMode] = useState(false);
+
 
   const handleLocalLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,25 +34,7 @@ export default function LoginPage() {
     } finally { setLoading(false); }
   };
 
-  const handleFirebaseLogin = async () => {
-    setError("");
-    setLoading(true);
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const idToken = await userCredential.user.getIdToken();
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken }),
-      });
-      if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
-      router.push("/dashboard");
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "";
-      if (msg.includes("auth/")) setDevMode(true);
-      else setError(msg || t("errorGeneric"));
-    } finally { setLoading(false); }
-  };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 p-4">
@@ -66,15 +47,7 @@ export default function LoginPage() {
           <p className="text-slate-500 mt-1">{tc("appSubtitle")}</p>
         </div>
 
-        {devMode && (
-          <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-4">
-            <div className="flex items-center gap-2 text-amber-700 mb-2">
-              <WifiOff className="w-5 h-5" />
-              <span className="font-medium">{t("devModeTitle")}</span>
-            </div>
-            <p className="text-sm text-amber-600">{t("devModeDesc")}</p>
-          </div>
-        )}
+
 
         <form onSubmit={handleLocalLogin} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4">
           {error && (

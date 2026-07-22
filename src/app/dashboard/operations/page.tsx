@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { auth } from "@/lib/firebase";
-import { onAuthStateChanged } from "firebase/auth";
+
 import { Building2, CalendarCheck, FileText, AlertTriangle, Plus, Building } from "lucide-react";
 
 const formatCurrency = (amount: number) =>
@@ -21,9 +20,10 @@ export default function OperationsPage() {
   const [contracts, setContracts] = useState<any[]>([]);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
-      if (!fbUser) { router.push("/login"); return; }
+    const checkAuth = async () => {
       try {
+        const meRes = await fetch("/api/auth/me");
+        if (!meRes.ok) { router.push("/login"); return; }
         const [uRes, bRes, cRes] = await Promise.all([
           fetch("/api/ops/units?limit=50"),
           fetch("/api/ops/bookings?limit=50"),
@@ -34,8 +34,8 @@ export default function OperationsPage() {
         if (cRes.ok) { const d = await cRes.json(); setContracts(d.contracts || []); }
       } catch (e) { console.error(e); }
       setLoading(false);
-    });
-    return () => unsubscribe();
+    };
+    checkAuth();
   }, [router]);
 
   const statusColor = (status: string) => {

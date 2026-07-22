@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { auth } from "@/lib/firebase";
-import { onAuthStateChanged } from "firebase/auth";
+
 import { Users, Clock, CalendarDays, DollarSign, UserPlus, LogIn, LogOut, CheckCircle, XCircle, Plus } from "lucide-react";
 
 const formatCurrency = (amount: number) =>
@@ -29,9 +28,10 @@ export default function HRPage() {
   const year = now.getFullYear();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (!firebaseUser) { router.push("/login"); return; }
+    const checkAuth = async () => {
       try {
+        const meRes = await fetch("/api/auth/me");
+        if (!meRes.ok) { router.push("/login"); return; }
         const [empRes, attRes, leaveRes, salRes] = await Promise.all([
           fetch("/api/hr/employees?limit=50"),
           fetch(`/api/hr/attendance?month=${month}&year=${year}&limit=50`),
@@ -44,7 +44,6 @@ export default function HRPage() {
         if (leaveRes.ok) { const d = await leaveRes.json(); setLeaves(d.leaves || []); }
         if (salRes.ok) { const d = await salRes.json(); setSalaries(d.salaries || []); }
 
-        // Check today's attendance
         const todayRecords = (await attRes.ok ? (await attRes.json()).records || [] : []).filter(
           (r: any) => new Date(r.date).toDateString() === now.toDateString()
         );
@@ -56,8 +55,8 @@ export default function HRPage() {
         }
       } catch (err) { console.error("HR fetch error:", err); }
       setLoading(false);
-    });
-    return () => unsubscribe();
+    };
+    checkAuth();
   }, [router, month, year]);
 
   const handleAttendance = async (action: "checkin" | "checkout") => {

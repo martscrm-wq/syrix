@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { auth } from "@/lib/firebase";
-import { onAuthStateChanged } from "firebase/auth";
+
 import { ShoppingCart, TrendingUp, DollarSign, Users, ArrowRight, CheckCircle, XCircle } from "lucide-react";
 
 const formatCurrency = (n: number) => new Intl.NumberFormat("ar-EG", { style: "currency", currency: "EGP" }).format(n);
@@ -22,15 +21,16 @@ export default function SalesPage() {
   const [activeStage, setActiveStage] = useState<string>("all");
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
-      if (!fbUser) { router.push("/login"); return; }
+    const checkAuth = async () => {
       try {
+        const meRes = await fetch("/api/auth/me");
+        if (!meRes.ok) { router.push("/login"); return; }
         const res = await fetch("/api/sales/deals?limit=50");
         if (res.ok) { const d = await res.json(); setDeals(d.deals || []); }
       } catch (e) { console.error(e); }
       setLoading(false);
-    });
-    return () => unsubscribe();
+    };
+    checkAuth();
   }, [router]);
 
   const filtered = activeStage === "all" ? deals : deals.filter(d => d.stage === activeStage);
