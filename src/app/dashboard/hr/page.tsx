@@ -23,15 +23,14 @@ export default function HRPage() {
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState("");
 
-  const now = new Date();
-  const month = now.getMonth() + 1;
-  const year = now.getFullYear();
-
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const meRes = await fetch("/api/auth/me");
         if (!meRes.ok) { router.push("/login"); return; }
+        const now = new Date();
+        const month = now.getMonth() + 1;
+        const year = now.getFullYear();
         const [empRes, attRes, leaveRes, salRes] = await Promise.all([
           fetch("/api/hr/employees?limit=50"),
           fetch(`/api/hr/attendance?month=${month}&year=${year}&limit=50`),
@@ -57,7 +56,7 @@ export default function HRPage() {
       setLoading(false);
     };
     checkAuth();
-  }, [router, month, year]);
+  }, [router]);
 
   const handleAttendance = async (action: "checkin" | "checkout") => {
     try {
