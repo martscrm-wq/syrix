@@ -5,11 +5,14 @@ import { useRouter } from "next/navigation";
 import { UserPlus, Edit2, Trash2, X, Search, Shield, Mail, Lock, Building } from "lucide-react";
 
 const ROLES = [
+  { value: "owner", label: "مالك" },
   { value: "super_admin", label: "مدير عام" },
   { value: "department_manager", label: "مدير قسم" },
   { value: "employee", label: "موظف" },
   { value: "accountant", label: "محاسب" },
 ];
+
+const ROLES_FORM = ROLES.filter(r => r.value !== "owner");
 
 const DEPARTMENTS = [
   { value: "hr", label: "الموارد البشرية" },
@@ -140,6 +143,7 @@ export default function UsersPage() {
 
   const getRoleColor = (role: string) => {
     switch (role) {
+      case "owner": return "bg-rose-100 text-rose-700";
       case "super_admin": return "bg-purple-100 text-purple-700";
       case "department_manager": return "bg-blue-100 text-blue-700";
       case "accountant": return "bg-amber-100 text-amber-700";
@@ -336,7 +340,7 @@ export default function UsersPage() {
                     onChange={(e) => setForm({ ...form, role: e.target.value })}
                     className="w-full pr-10 pl-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[44px] appearance-none"
                   >
-                    {ROLES.map((r) => (
+                    {ROLES_FORM.map((r) => (
                       <option key={r.value} value={r.value}>{r.label}</option>
                     ))}
                   </select>

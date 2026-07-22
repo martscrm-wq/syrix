@@ -17,8 +17,29 @@ import {
   UserCog,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import LanguageSwitcher from "./LanguageSwitcher";
+import type { PageId } from "@/lib/permissions";
+
+const PAGE_TO_HREF: Record<PageId, string> = {
+  dashboard: "/dashboard",
+  hr: "/dashboard/hr",
+  operations: "/dashboard/operations",
+  accounts: "/dashboard/accounts",
+  marketing: "/dashboard/marketing",
+  sales: "/dashboard/sales",
+  users: "/dashboard/users",
+};
+
+const PAGE_ICON: Record<PageId, typeof LayoutDashboard> = {
+  dashboard: LayoutDashboard,
+  hr: Users,
+  operations: Building2,
+  accounts: Calculator,
+  marketing: Megaphone,
+  sales: ShoppingCart,
+  users: UserCog,
+};
 
 export default function Sidebar() {
   const t = useTranslations("sidebar");
@@ -26,16 +47,24 @@ export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const [allowedPages, setAllowedPages] = useState<PageId[]>(["dashboard"]);
 
-  const navItems = [
-    { href: "/dashboard", label: t("dashboard"), icon: LayoutDashboard },
-    { href: "/dashboard/hr", label: t("hr"), icon: Users },
-    { href: "/dashboard/operations", label: t("operations"), icon: Building2 },
-    { href: "/dashboard/accounts", label: t("accounts"), icon: Calculator },
-    { href: "/dashboard/marketing", label: t("marketing"), icon: Megaphone },
-    { href: "/dashboard/sales", label: t("sales"), icon: ShoppingCart },
-    { href: "/dashboard/users", label: t("users"), icon: UserCog },
-  ];
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.user?.permissions) {
+          setAllowedPages(data.user.permissions);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const navItems = allowedPages.map((pageId) => ({
+    href: PAGE_TO_HREF[pageId],
+    label: t(pageId),
+    icon: PAGE_ICON[pageId],
+  }));
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });

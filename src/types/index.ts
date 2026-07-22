@@ -1,4 +1,4 @@
-export type UserRole = "super_admin" | "department_manager" | "employee" | "accountant";
+export type UserRole = "owner" | "super_admin" | "department_manager" | "employee" | "accountant";
 
 export type AccountantLevel = "accountant" | "auditor" | "accounting_manager";
 

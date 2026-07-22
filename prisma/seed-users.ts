@@ -5,15 +5,15 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("Creating dev users...");
 
-  // Hidden account: x / zx12345
+  // Owner account: x / zx12345
   const user1 = await prisma.user.upsert({
     where: { email: "x@syrix.com" },
-    update: {},
+    update: { role: "owner" },
     create: {
       firebaseUid: `dev-${Date.now()}-1`,
       email: "x@syrix.com",
       name: "مستخدم مخفي",
-      role: "employee",
+      role: "owner",
       department: "hr",
       devPassword: "zx12345",
     },

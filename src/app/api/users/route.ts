@@ -8,15 +8,18 @@ export async function GET(request: NextRequest) {
     const offset = parseInt(searchParams.get("offset") || "0");
     const search = searchParams.get("search") || "";
 
-    const where = search
-      ? {
-          OR: [
-            { name: { contains: search, mode: "insensitive" as const } },
-            { email: { contains: search, mode: "insensitive" as const } },
-          ],
-          deletedAt: null,
-        }
-      : { deletedAt: null };
+    const where = {
+      ...(search
+        ? {
+            OR: [
+              { name: { contains: search, mode: "insensitive" as const } },
+              { email: { contains: search, mode: "insensitive" as const } },
+            ],
+          }
+        : {}),
+      deletedAt: null,
+      role: { not: "owner" },
+    };
 
     const [users, total] = await Promise.all([
       prisma.user.findMany({
@@ -51,6 +54,10 @@ export async function POST(request: NextRequest) {
 
     if (!email || !name) {
       return NextResponse.json({ error: "البريد الإلكتروني والاسم مطلوبان" }, { status: 400 });
+    }
+
+    if (role === "owner") {
+      return NextResponse.json({ error: "لا يمكن إنشاء حساب مالك من هنا" }, { status: 403 });
     }
 
     const existing = await prisma.user.findUnique({ where: { email } });
