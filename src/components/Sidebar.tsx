@@ -16,6 +16,7 @@ import {
   Menu,
   X,
   ChevronLeft,
+  UserCog,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -35,6 +36,7 @@ export default function Sidebar() {
     { href: "/dashboard/accounts", label: t("accounts"), icon: Calculator },
     { href: "/dashboard/marketing", label: t("marketing"), icon: Megaphone },
     { href: "/dashboard/sales", label: t("sales"), icon: ShoppingCart },
+    { href: "/dashboard/users", label: t("users"), icon: UserCog },
   ];
 
   const handleLogout = async () => {

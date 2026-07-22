@@ -46,7 +46,8 @@
     "operations": "Operations",
     "accounts": "Accounting",
     "marketing": "Marketing",
-    "sales": "Sales"
+    "sales": "Sales",
+    "users": "Users"
   },
   "login": {
     "title": "Login",
